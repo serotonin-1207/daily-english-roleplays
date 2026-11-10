@@ -341,6 +341,42 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:10px 0 0}
 .ngsl-chip{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700}
 .ngsl-chip b{color:var(--warm);font-size:12px;margin-right:5px}
 .card.flash{outline:3px solid var(--warm);outline-offset:2px}
+/* Language switch + visitor counter */
+.lang-bar{border-top:1px solid var(--line);background:var(--surface)}
+.lang-bar-in{max-width:1240px;margin:0 auto;padding:9px 18px;display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap}
+.lang-switch{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:3px;gap:3px}
+.lang-switch button{border:0;background:transparent;padding:6px 18px;border-radius:999px;font-weight:900;font-size:14px;color:var(--muted)}
+.lang-switch button.active{background:var(--ink);color:#fff}
+.visitor-line{font-size:12.5px;color:var(--muted);letter-spacing:.01em}
+.visitor-line b{color:var(--accent);font-weight:900}
+/* Chat */
+#chatView{display:none}
+.chat-wrap{max-width:760px;margin:8px auto 0}
+.chat-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+.chat-card h2{margin:0 0 4px;font-size:22px;letter-spacing:-.02em}
+.chat-sub{margin:0;color:var(--muted);font-size:14px}
+.chat-field{margin-top:14px}
+.chat-field label{font-weight:900;font-size:14px;display:block;margin-bottom:7px}
+.chat-input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-size:15px}
+.chat-input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.chat-country-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chat-country-badge{font-size:15px;font-weight:800;background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:7px 13px}
+.chat-country-sel{flex:1;min-width:180px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:14.5px;font-weight:700}
+.chat-join{width:100%;margin-top:16px;padding:13px}
+.chat-me{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;margin-top:14px}
+.chat-me b{font-size:15px}
+.chat-msgs{margin-top:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface2);height:380px;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px}
+.chat-msg{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px;max-width:92%}
+.chat-msg .cm-head{font-size:12px;color:var(--muted);display:flex;gap:7px;flex-wrap:wrap;align-items:baseline}
+.chat-msg .cm-name{font-weight:900;color:var(--ink);font-size:13px}
+.chat-msg .cm-text{font-size:15px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.chat-empty{color:var(--muted);font-size:14px;text-align:center;padding:26px 10px}
+.chat-warn{font-size:12.5px;color:var(--warm);background:var(--warm-soft);border-radius:10px;padding:8px 11px;margin:12px 0 0;line-height:1.55}
+.chat-input-row{display:flex;gap:8px;margin-top:12px}
+.chat-input-row .chat-input{flex:1}
+.chat-send{flex:0 0 auto;padding:0 20px}
+.chat-status{font-size:13px;color:var(--muted);margin:10px 0 0;min-height:20px}
+@media(max-width:520px){.chat-card{padding:17px}.chat-msgs{height:320px}}
 </style>
 </head>
 <body>
@@ -352,8 +388,16 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:10px 0 0}
     <button id="tabQuiz" type="button">문제 모드</button>
     <button id="tabPhonics" type="button">파닉스</button>
     <button id="tabNgsl" type="button">NGSL 단어</button>
+    <button id="tabChat" type="button">채팅</button>
   </nav>
 </div>
+<div class="lang-bar"><div class="lang-bar-in">
+  <div class="lang-switch" role="group" aria-label="언어 선택 / Language">
+    <button id="langEnBtn" class="active" type="button">English</button>
+    <button id="langKoBtn" type="button">한국어</button>
+  </div>
+  <div class="visitor-line" id="visitorLine" aria-live="polite">👀 지금 <b id="vcNow">…</b>명 보고 있음 · 오늘 <b id="vcToday">…</b>명 · 누적 <b id="vcTotal">…</b>명</div>
+</div></div>
 <div class="save-bar"><div class="save-bar-in">
   <span class="save-bar-label">이 페이지 저장하기</span>
   <button class="save-btn fav" id="favBtn" type="button"><span class="sb-ico" aria-hidden="true">★</span>즐겨찾기</button>
@@ -368,8 +412,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:10px 0 0}
   <section id="listView">
     <div class="hero">
       <div>
-        <h1>말문이 트이는 건,<br>대화를 통째로 익힐 때예요.</h1>
-        <p>문장 하나가 아니라 주고받는 대화로 익히세요. 각 상황극마다 영어 → 뜻 → 한글 발음 → 단어 하나하나의 뜻까지 한 번에 복습할 수 있습니다. 본문은 미국식 표현이고, 영국식과 다른 대사는 그 아래에 영국식 표현을 작게 함께 적어 뒀어요.</p>
+        <h1 id="heroTitle">말문이 트이는 건,<br>대화를 통째로 익힐 때예요.</h1>
+        <p id="heroText">문장 하나가 아니라 주고받는 대화로 익히세요. 각 상황극마다 영어 → 뜻 → 한글 발음 → 단어 하나하나의 뜻까지 한 번에 복습할 수 있습니다. 본문은 미국식 표현이고, 영국식과 다른 대사는 그 아래에 영국식 표현을 작게 함께 적어 뒀어요.</p>
       </div>
       <div>
         <div class="stats">
@@ -480,7 +524,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:10px 0 0}
       </div>
 
       <article class="quiz-card" id="quizCard" aria-live="polite"></article>
-      <p class="hint">쓰기: 한글 뜻을 보고 영어 문장을 직접 입력한 뒤 정답 확인을 누르세요. 말하기: 마이크 버튼을 누르고 영어 문장을 말하면, 들은 문장을 자동으로 채점합니다.</p>
+      <p class="hint" id="quizModeHint">쓰기: 한글 뜻을 보고 영어 문장을 직접 입력한 뒤 정답 확인을 누르세요. 말하기: 마이크 버튼을 누르고 영어 문장을 말하면, 들은 문장을 자동으로 채점합니다.</p>
     </div>
   </section>
 
@@ -579,6 +623,41 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:10px 0 0}
         <h3>🌱 아직 안 나온 핵심 단어 · 빈도순 상위 100개</h3>
         <p>NGSL에서 자주 쓰이는데 아직 우리 상황극에는 나오지 않은 단어들이에요. <b>앞으로의 매일 상황극에서 우선적으로 다룰 단어</b>입니다. 이 단어들이 상황극에 등장하면 위 목록에서 뜻과 함께 볼 수 있어요.</p>
         <div class="ngsl-missing"><span class="ngsl-chip"><b>95위</b>mean</span><span class="ngsl-chip"><b>100위</b>such</span><span class="ngsl-chip"><b>112위</b>man</span><span class="ngsl-chip"><b>116위</b>between</span><span class="ngsl-chip"><b>131위</b>point</span><span class="ngsl-chip"><b>141위</b>become</span><span class="ngsl-chip"><b>142위</b>interest</span><span class="ngsl-chip"><b>143위</b>country</span><span class="ngsl-chip"><b>156위</b>world</span><span class="ngsl-chip"><b>159위</b>might</span><span class="ngsl-chip"><b>160위</b>must</span><span class="ngsl-chip"><b>162위</b>never</span><span class="ngsl-chip"><b>167위</b>group</span><span class="ngsl-chip"><b>169위</b>woman</span><span class="ngsl-chip"><b>175위</b>again</span><span class="ngsl-chip"><b>179위</b>system</span><span class="ngsl-chip"><b>181위</b>question</span><span class="ngsl-chip"><b>187위</b>study</span><span class="ngsl-chip"><b>188위</b>follow</span><span class="ngsl-chip"><b>189위</b>begin</span><span class="ngsl-chip"><b>190위</b>important</span><span class="ngsl-chip"><b>197위</b>early</span><span class="ngsl-chip"><b>199위</b>state</span><span class="ngsl-chip"><b>202위</b>fact</span><span class="ngsl-chip"><b>203위</b>however</span><span class="ngsl-chip"><b>205위</b>provide</span><span class="ngsl-chip"><b>207위</b>read</span><span class="ngsl-chip"><b>211위</b>business</span><span class="ngsl-chip"><b>212위</b>without</span><span class="ngsl-chip"><b>216위</b>government</span><span class="ngsl-chip"><b>217위</b>word</span><span class="ngsl-chip"><b>218위</b>issue</span><span class="ngsl-chip"><b>223위</b>service</span><span class="ngsl-chip"><b>224위</b>against</span><span class="ngsl-chip"><b>225위</b>believe</span><span class="ngsl-chip"><b>227위</b>though</span><span class="ngsl-chip"><b>230위</b>increase</span><span class="ngsl-chip"><b>233위</b>result</span><span class="ngsl-chip"><b>235위</b>example</span><span class="ngsl-chip"><b>237위</b>offer</span><span class="ngsl-chip"><b>240위</b>program</span><span class="ngsl-chip"><b>241위</b>lead</span><span class="ngsl-chip"><b>242위</b>buy</span><span class="ngsl-chip"><b>248위</b>student</span><span class="ngsl-chip"><b>249위</b>face</span><span class="ngsl-chip"><b>258위</b>spend</span><span class="ngsl-chip"><b>261위</b>learn</span><span class="ngsl-chip"><b>262위</b>level</span><span class="ngsl-chip"><b>263위</b>person</span><span class="ngsl-chip"><b>264위</b>experience</span><span class="ngsl-chip"><b>265위</b>once</span><span class="ngsl-chip"><b>266위</b>member</span><span class="ngsl-chip"><b>270위</b>night</span><span class="ngsl-chip"><b>271위</b>able</span><span class="ngsl-chip"><b>272위</b>support</span><span class="ngsl-chip"><b>273위</b>whether</span><span class="ngsl-chip"><b>274위</b>line</span><span class="ngsl-chip"><b>275위</b>present</span><span class="ngsl-chip"><b>277위</b>quite</span><span class="ngsl-chip"><b>278위</b>although</span><span class="ngsl-chip"><b>280위</b>term</span><span class="ngsl-chip"><b>281위</b>least</span><span class="ngsl-chip"><b>282위</b>age</span><span class="ngsl-chip"><b>283위</b>low</span><span class="ngsl-chip"><b>284위</b>speak</span><span class="ngsl-chip"><b>286위</b>process</span><span class="ngsl-chip"><b>287위</b>public</span><span class="ngsl-chip"><b>292위</b>rather</span><span class="ngsl-chip"><b>293위</b>view</span><span class="ngsl-chip"><b>295위</b>consider</span><span class="ngsl-chip"><b>297위</b>parent</span><span class="ngsl-chip"><b>301위</b>control</span><span class="ngsl-chip"><b>303위</b>concern</span><span class="ngsl-chip"><b>304위</b>product</span><span class="ngsl-chip"><b>306위</b>story</span><span class="ngsl-chip"><b>308위</b>continue</span><span class="ngsl-chip"><b>312위</b>rate</span><span class="ngsl-chip"><b>314위</b>expect</span><span class="ngsl-chip"><b>315위</b>effect</span><span class="ngsl-chip"><b>316위</b>sort</span><span class="ngsl-chip"><b>317위</b>ever</span><span class="ngsl-chip"><b>319위</b>cause</span><span class="ngsl-chip"><b>320위</b>fall</span><span class="ngsl-chip"><b>324위</b>allow</span><span class="ngsl-chip"><b>327위</b>base</span><span class="ngsl-chip"><b>329위</b>suggest</span><span class="ngsl-chip"><b>330위</b>past</span><span class="ngsl-chip"><b>331위</b>power</span><span class="ngsl-chip"><b>332위</b>test</span><span class="ngsl-chip"><b>333위</b>visit</span><span class="ngsl-chip"><b>335위</b>grow</span><span class="ngsl-chip"><b>338위</b>mother</span><span class="ngsl-chip"><b>340위</b>matter</span><span class="ngsl-chip"><b>341위</b>mind</span><span class="ngsl-chip"><b>342위</b>value</span><span class="ngsl-chip"><b>344위</b>record</span><span class="ngsl-chip"><b>346위</b>force</span><span class="ngsl-chip"><b>348위</b>several</span><span class="ngsl-chip"><b>349위</b>light</span><span class="ngsl-chip"><b>350위</b>develop</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAT VIEW -->
+  <section id="chatView">
+    <div class="chat-wrap">
+      <div class="chat-card">
+        <h2>💬 채팅 / Chat</h2>
+        <p class="chat-sub">링크를 아는 누구나 들어올 수 있는 열린 방이에요. 한국어로, 영어로, 편하게 이야기해 보세요.<br>An open room for learners everywhere — chat freely in Korean, English, or both.</p>
+        <div id="chatSetup">
+          <div class="chat-field">
+            <label for="chatName">닉네임 / Nickname</label>
+            <input class="chat-input" id="chatName" type="text" maxlength="20" autocomplete="off" placeholder="닉네임 (최대 20자) / Nickname (max 20)">
+          </div>
+          <div class="chat-field">
+            <label>나라 / Country</label>
+            <div class="chat-country-row">
+              <span class="chat-country-badge" id="chatCountryBadge">🌐 확인 중… / Detecting…</span>
+              <select class="chat-country-sel" id="chatCountrySel" aria-label="나라 선택 / Choose your country"></select>
+            </div>
+            <p style="margin:7px 0 0;font-size:12.5px;color:var(--muted)">접속 위치로 자동 표시돼요. 다르면 오른쪽에서 직접 바꿀 수 있어요. / Detected from your connection — change it if it's wrong.</p>
+          </div>
+          <button class="btn primary chat-join" id="chatJoinBtn" type="button">입장하기 / Join chat</button>
+        </div>
+        <div id="chatMain" style="display:none">
+          <div class="chat-me"><span>내 정보 / Me:</span> <b id="chatMeLabel"></b> <button class="btn" id="chatEditBtn" type="button">바꾸기 / Change</button></div>
+          <div class="chat-msgs" id="chatMsgs" aria-live="polite"><div class="chat-empty">불러오는 중… / Loading…</div></div>
+          <p class="chat-warn">⚠ 욕설·비방과 개인정보(전화번호·주소 등)는 올리지 마세요. / Please be kind — no insults, and don't share personal information.</p>
+          <div class="chat-input-row">
+            <input class="chat-input" id="chatInput" type="text" maxlength="500" autocomplete="off" placeholder="메시지 입력 / Type a message" aria-label="메시지 입력 / Type a message">
+            <button class="btn primary chat-send" id="chatSendBtn" type="button">전송 / Send</button>
+          </div>
+        </div>
+        <p class="chat-status" id="chatStatus" aria-live="polite"></p>
       </div>
     </div>
   </section>
@@ -1460,6 +1539,127 @@ var BATCHES=[
   {id:10, date:"2026-11-10", display:"2026년 11월 10일 (화)", short:"11월 10일", title:"전기요금 문의·계란 빌리기·담임 상담까지 생활 상황 10"}
 ];
 SKITS.forEach(function(s){ if(!s.batch) s.batch=1; });
+
+/* ===== 한국어 버전 (생활 한국어 상황극) =====
+   영어판과 같은 구조. KO 대사는 en 자리에 한국어 문장, ko 자리에 영어 뜻(Meaning),
+   pr 자리에 로마자 발음(Pronunciation), words 자리에 단어별 영어 뜻을 넣어
+   기존 렌더링·복습·문제 기능을 그대로 재사용합니다. */
+var EN_SKITS=SKITS, EN_BATCHES=BATCHES;
+var KO_BATCHES=[
+  {id:1, date:"2026-11-10", display:"2026년 11월 10일 (화)", short:"11월 10일", title:"생활 한국어 첫걸음 상황 10 · Korean for everyday life"}
+];
+var KO_SKITS=[
+{id:1001,batch:1,cat:"쇼핑·계산",title:"편의점에서 물건 사기",scene:"Buying something at a convenience store",tags:["물건 사기","카드결제"],lines:[
+{who:"나",me:1,en:"안녕하세요. 물 있어요?",ko:"Hi. Do you have water?",pr:'Annyeonghaseyo. Mul isseoyo? (Tip: 있어요 sounds like "isseoyo" — the ㅆ is a tense, tight "ss" sound.)',words:"<b>안녕하세요</b> hello (polite greeting) · <b>물</b> water · <b>있어요</b> there is / do you have"},
+{who:"점원",en:"네, 저쪽 냉장고에 있어요.",ko:"Yes, it's in the fridge over there.",pr:"Ne, jeojjok naengjanggoe isseoyo.",words:"<b>네</b> yes · <b>저쪽</b> over there · <b>냉장고</b> refrigerator · <b>에</b> in · <b>있어요</b> there is"},
+{who:"나",me:1,en:"이 물은 얼마예요?",ko:"How much is this water?",pr:"I mureun eolmayeyo?",words:"<b>이</b> this · <b>물</b> water · <b>은</b> (topic marker) · <b>얼마</b> how much · <b>예요</b> is"},
+{who:"점원",en:"천 원이에요.",ko:"It's 1,000 won.",pr:"Cheon wonieyo.",words:"<b>천</b> thousand · <b>원</b> won (Korean currency) · <b>이에요</b> is"},
+{who:"나",me:1,en:"카드로 계산할게요.",ko:"I'll pay by card.",pr:"Kadeuro gyesanhalgeyo.",words:"<b>카드</b> card · <b>로</b> by / with · <b>계산할게요</b> I will pay"},
+{who:"점원",en:"네, 여기 카드 넣어 주세요.",ko:"Sure, please insert your card here.",pr:"Ne, yeogi kadeu neoeo juseyo.",words:"<b>네</b> yes · <b>여기</b> here · <b>카드</b> card · <b>넣어</b> insert · <b>주세요</b> please"}
+]},
+{id:1002,batch:1,cat:"음식·카페",title:"카페에서 커피 주문하기",scene:"Ordering coffee at a cafe",tags:["커피","주문"],lines:[
+{who:"바리스타",en:"어서 오세요. 주문하시겠어요?",ko:"Welcome. Would you like to order?",pr:"Eoseo oseyo. Jumunhasigesseoyo?",words:"<b>어서 오세요</b> welcome (come in) · <b>주문하시겠어요</b> would you like to order"},
+{who:"나",me:1,en:"아메리카노 한 잔 주세요.",ko:"One Americano, please.",pr:"Amerikano han jan juseyo.",words:"<b>아메리카노</b> Americano · <b>한</b> one · <b>잔</b> cup (counter) · <b>주세요</b> please give me"},
+{who:"바리스타",en:"따뜻한 걸로 드릴까요, 차가운 걸로 드릴까요?",ko:"Would you like it hot or iced?",pr:'Ttatteuthan geollo deurilkkayo, chagaun geollo deurilkkayo? (Tip: 따뜻한 has the tense ㄸ — say it with a tight, short "tt".)',words:"<b>따뜻한</b> hot · <b>걸로</b> as (short for 것으로) · <b>드릴까요</b> shall I give you · <b>차가운</b> cold"},
+{who:"나",me:1,en:"차가운 걸로 주세요.",ko:"Iced, please.",pr:"Chagaun geollo juseyo.",words:"<b>차가운</b> cold · <b>걸로</b> as · <b>주세요</b> please"},
+{who:"바리스타",en:"여기서 드시나요?",ko:"Will you have it here?",pr:"Yeogiseo deusinayo?",words:"<b>여기서</b> here · <b>드시나요</b> will you eat / drink (polite)"},
+{who:"나",me:1,en:"네, 여기서 마실게요.",ko:"Yes, I'll drink it here.",pr:"Ne, yeogiseo masilgeyo.",words:"<b>네</b> yes · <b>여기서</b> here · <b>마실게요</b> I will drink"}
+]},
+{id:1003,batch:1,cat:"음식·식당",title:"식당에서 메뉴 주문하기",scene:"Ordering food at a restaurant",tags:["메뉴","주문"],lines:[
+{who:"점원",en:"어서 오세요. 몇 분이세요?",ko:"Welcome. How many people?",pr:"Eoseo oseyo. Myeot buniseyo?",words:"<b>어서 오세요</b> welcome · <b>몇</b> how many · <b>분</b> people (polite counter) · <b>이세요</b> are you"},
+{who:"나",me:1,en:"두 명이에요.",ko:"Two people.",pr:"Du myeongieyo.",words:"<b>두</b> two · <b>명</b> people (counter) · <b>이에요</b> are"},
+{who:"점원",en:"이쪽으로 앉으세요.",ko:"Please sit over here.",pr:"Ijjogeuro anjeuseyo.",words:"<b>이쪽으로</b> to this side · <b>앉으세요</b> please sit"},
+{who:"나",me:1,en:"비빔밥 하나랑 김치찌개 하나 주세요.",ko:"One bibimbap and one kimchi stew, please.",pr:'Bibimbap hanarang gimchijjigae hana juseyo. (Tip: 김치찌개 has the tense ㅉ — say it with a tight, short "jj".)',words:"<b>비빔밥</b> bibimbap (mixed rice) · <b>하나</b> one · <b>랑</b> and · <b>김치찌개</b> kimchi stew · <b>주세요</b> please give me"},
+{who:"점원",en:"네, 물은 셀프예요.",ko:"Sure. Water is self-service.",pr:"Ne, mureun selpeuyeyo.",words:"<b>네</b> yes · <b>물</b> water · <b>은</b> (topic marker) · <b>셀프</b> self-service · <b>예요</b> is"},
+{who:"점원",en:"맛있게 드세요.",ko:"Enjoy your meal.",pr:'Masitkke deuseyo. (Tip: 맛있게 sounds like "masitkke" — the ㅆ makes a tight "kk" sound.)',words:"<b>맛있게</b> deliciously · <b>드세요</b> please eat / drink (polite)"}
+]},
+{id:1004,batch:1,cat:"이동·길찾기",title:"길 물어보기",scene:"Asking for directions",tags:["길 묻기","방향"],lines:[
+{who:"나",me:1,en:"실례합니다. 지하철역이 어디에 있어요?",ko:"Excuse me. Where is the subway station?",pr:"Sillyehamnida. Jihacheolyeogi eodie isseoyo?",words:"<b>실례합니다</b> excuse me · <b>지하철역</b> subway station · <b>이</b> (subject marker) · <b>어디에</b> where · <b>있어요</b> there is"},
+{who:"행인",en:"이 길을 쭉 가면 오른쪽에 있어요.",ko:"Go straight down this road and it's on your right.",pr:"I gireul jjuk gamyeon oreunjjoge isseoyo.",words:"<b>이</b> this · <b>길</b> road · <b>을</b> (object marker) · <b>쭉</b> straight · <b>가면</b> if you go · <b>오른쪽</b> right side · <b>에</b> on · <b>있어요</b> there is"},
+{who:"나",me:1,en:"여기서 멀어요?",ko:"Is it far from here?",pr:"Yeogiseo meoreoyo?",words:"<b>여기서</b> from here · <b>멀어요</b> is it far"},
+{who:"행인",en:"아니요, 걸어서 5분이에요.",ko:"No, it's a 5-minute walk.",pr:"Aniyo, georeoseo obunieyo.",words:"<b>아니요</b> no · <b>걸어서</b> by walking · <b>5분</b> 5 minutes · <b>이에요</b> is"},
+{who:"나",me:1,en:"아, 감사합니다.",ko:"Oh, thank you.",pr:"A, gamsahamnida.",words:"<b>아</b> oh · <b>감사합니다</b> thank you"},
+{who:"행인",en:"천만에요.",ko:"You're welcome.",pr:"Cheonmaneyo.",words:"<b>천만에요</b> you're welcome"}
+]},
+{id:1005,batch:1,cat:"이동·교통",title:"지하철 타기 · 교통카드 충전하기",scene:"Taking the subway, recharging a transit card",tags:["지하철","교통카드","충전"],lines:[
+{who:"나",me:1,en:"교통카드 충전하고 싶어요.",ko:"I want to recharge my transit card.",pr:"Gyotongkadeu chungjeonhago sipeoyo.",words:"<b>교통카드</b> transit card · <b>충전하고</b> to recharge · <b>싶어요</b> I want to"},
+{who:"직원",en:"얼마 충전할까요?",ko:"How much would you like to add?",pr:"Eolma chungjeonhalkkayo?",words:"<b>얼마</b> how much · <b>충전할까요</b> shall I recharge"},
+{who:"나",me:1,en:"만 원 충전해 주세요.",ko:"Please add 10,000 won.",pr:"Man won chungjeonhae juseyo.",words:"<b>만</b> ten thousand · <b>원</b> won · <b>충전해</b> to recharge · <b>주세요</b> please"},
+{who:"직원",en:"여기에 카드를 올려 주세요.",ko:"Please put your card here.",pr:"Yeogie kadeureul ollyeo juseyo.",words:"<b>여기</b> here · <b>에</b> on · <b>카드</b> card · <b>를</b> (object marker) · <b>올려</b> to put up / on · <b>주세요</b> please"},
+{who:"나",me:1,en:"충전됐어요. 이 지하철은 어디로 가요?",ko:"It's recharged. Where does this subway go?",pr:"Chungjeondwaesseoyo. I jihacheoreun eodiro gayo?",words:"<b>충전됐어요</b> it is recharged · <b>이</b> this · <b>지하철</b> subway · <b>은</b> (topic marker) · <b>어디로</b> to where · <b>가요</b> does it go"},
+{who:"직원",en:"이 열차는 서울역으로 가요.",ko:"This train goes to Seoul Station.",pr:'I yeolchaneun seoullyeogeuro gayo. (Tip: 서울역 — the ㄹ links to the next syllable, so it sounds like "seoullyeok".)',words:"<b>이</b> this · <b>열차</b> train · <b>는</b> (topic marker) · <b>서울역</b> Seoul Station · <b>으로</b> to · <b>가요</b> goes"}
+]},
+{id:1006,batch:1,cat:"도움·건강",title:"약국에서 감기약 사기",scene:"Buying cold medicine at a pharmacy",tags:["감기","약"],lines:[
+{who:"나",me:1,en:"안녕하세요. 감기에 걸렸어요.",ko:"Hello. I caught a cold.",pr:'Annyeonghaseyo. Gamgie geollyeosseoyo. (Tip: 걸렸어요 — the ㄹ doubles, so it sounds like "geollyeo".)',words:"<b>안녕하세요</b> hello · <b>감기</b> cold · <b>에</b> with · <b>걸렸어요</b> I caught"},
+{who:"약사",en:"어디가 아프세요?",ko:"What hurts?",pr:"Eodiga apeuseyo?",words:"<b>어디가</b> where · <b>아프세요</b> does it hurt (polite)"},
+{who:"나",me:1,en:"목이 아프고 열도 있어요.",ko:"My throat hurts and I have a fever too.",pr:"Mogi apeugo yeoldo isseoyo.",words:"<b>목</b> throat · <b>이</b> (subject marker) · <b>아프고</b> hurts and · <b>열</b> fever · <b>도</b> also · <b>있어요</b> I have"},
+{who:"약사",en:"이 약은 하루에 세 번 드세요.",ko:"Take this medicine three times a day.",pr:"I yageun harue se beon deuseyo.",words:"<b>이</b> this · <b>약</b> medicine · <b>은</b> (topic marker) · <b>하루에</b> per day · <b>세</b> three · <b>번</b> times · <b>드세요</b> please take (polite)"},
+{who:"약사",en:"식사 후에 드시는 게 좋아요.",ko:"It's better to take it after meals.",pr:'Siksa hue deusineun ge joayo.',words:'<b>식사</b> meal · <b>후에</b> after · <b>드시는</b> to take · <b>게</b> (short for 것이, "the thing") · <b>좋아요</b> it is good'},
+{who:"나",me:1,en:"네, 감사합니다. 얼마예요?",ko:"OK, thank you. How much is it?",pr:"Ne, gamsahamnida. Eolmayeyo?",words:"<b>네</b> yes · <b>감사합니다</b> thank you · <b>얼마</b> how much · <b>예요</b> is it"}
+]},
+{id:1007,batch:1,cat:"집·가족",title:"친구와 주말 약속 잡기",scene:"Making weekend plans with a friend — 반말 (casual speech between close friends)",tags:["친구","주말","반말"],lines:[
+{who:"나",me:1,en:"야, 이번 주말에 뭐 해?",ko:"Hey, what are you doing this weekend?",pr:"Ya, ibeon jumare mwo hae?",words:"<b>야</b> hey · <b>이번</b> this · <b>주말</b> weekend · <b>에</b> on · <b>뭐</b> what · <b>해</b> do you do (casual)"},
+{who:"친구",en:"아직 아무것도 안 정했어. 왜?",ko:"I haven't decided anything yet. Why?",pr:"Ajik amugeotdo an jeonghaesseo. Wae?",words:"<b>아직</b> yet · <b>아무것도</b> nothing · <b>안</b> not · <b>정했어</b> I decided · <b>왜</b> why"},
+{who:"나",me:1,en:"우리 한강에서 자전거 타자.",ko:"Let's ride bikes along the Han River.",pr:"Uri hangangeseo jajeongeo taja.",words:"<b>우리</b> we · <b>한강</b> Han River · <b>에서</b> at · <b>자전거</b> bicycle · <b>타자</b> let's ride"},
+{who:"친구",en:"좋아! 몇 시에 만날까?",ko:"Sounds good! What time should we meet?",pr:"Joa! Myeot sie mannalkka?",words:"<b>좋아</b> good (sounds good) · <b>몇</b> what · <b>시</b> hour · <b>에</b> at · <b>만날까</b> shall we meet"},
+{who:"나",me:1,en:"오전 열 시에 만나자.",ko:"Let's meet at 10 in the morning.",pr:"Ojeon yeol sie mannaja.",words:"<b>오전</b> morning · <b>열</b> ten · <b>시</b> hour · <b>에</b> at · <b>만나자</b> let's meet"},
+{who:"친구",en:"그래. 비가 오면 연락할게.",ko:"OK. I'll text you if it rains.",pr:"Geurae. Biga omyeon yeollakhalge.",words:"<b>그래</b> OK · <b>비</b> rain · <b>가</b> (subject marker) · <b>오면</b> if it comes · <b>연락할게</b> I will contact you"}
+]},
+{id:1008,batch:1,cat:"날씨·일상",title:"날씨 이야기하기",scene:"Talking about the weather",tags:["날씨"],lines:[
+{who:"나",me:1,en:"오늘 날씨가 정말 좋네요.",ko:"The weather is really nice today.",pr:'Oneul nalssiga jeongmal jonneyo. (Tip: 좋네요 sounds like "jonneyo" — in this spot the ㅎ goes silent.)',words:"<b>오늘</b> today · <b>날씨</b> weather · <b>가</b> (subject marker) · <b>정말</b> really · <b>좋네요</b> it is nice"},
+{who:"친구",en:"네, 햇살도 따뜻하고 바람도 시원해요.",ko:"Yes, the sunshine is warm and the breeze is cool.",pr:"Ne, haessaldo ttatteuthago baramdo siwonhaeyo.",words:"<b>네</b> yes · <b>햇살</b> sunshine · <b>도</b> also · <b>따뜻하고</b> warm and · <b>바람</b> breeze · <b>도</b> also · <b>시원해요</b> it is cool"},
+{who:"나",me:1,en:"내일은 비가 온대요.",ko:"They say it's going to rain tomorrow.",pr:"Naeireun biga ondaeyo.",words:"<b>내일</b> tomorrow · <b>은</b> (topic marker) · <b>비</b> rain · <b>가</b> (subject marker) · <b>온대요</b> they say it will come"},
+{who:"친구",en:"그래요? 그럼 우산 챙겨야겠네요.",ko:"Really? Then I should bring an umbrella.",pr:"Geuraeyo? Geureom usan chaenggyeoyagetneyo.",words:"<b>그래요</b> really? · <b>그럼</b> then · <b>우산</b> umbrella · <b>챙겨야겠네요</b> I should bring"},
+{who:"나",me:1,en:"비가 와도 산책할 수 있어요.",ko:"We can still go for a walk even if it rains.",pr:"Biga wado sanchaekal su isseoyo.",words:"<b>비</b> rain · <b>가</b> (subject marker) · <b>와도</b> even if it comes · <b>산책할</b> to take a walk · <b>수 있어요</b> I can"},
+{who:"친구",en:"그러네요. 가벼운 비는 괜찮아요.",ko:"That's true. A light rain is fine.",pr:"Geureoneyo. Gabyeoun bineun gwaenchanayo.",words:"<b>그러네요</b> that's true · <b>가벼운</b> light · <b>비</b> rain · <b>는</b> (topic marker) · <b>괜찮아요</b> it is fine"}
+]},
+{id:1009,batch:1,cat:"이동·교통",title:"택시 타기",scene:"Taking a taxi",tags:["택시","목적지"],lines:[
+{who:"나",me:1,en:"택시!",ko:"Taxi!",pr:"Taeksi!",words:"<b>택시</b> taxi"},
+{who:"기사",en:"어디로 가세요?",ko:"Where are you going?",pr:"Eodiro gaseyo?",words:"<b>어디로</b> to where · <b>가세요</b> are you going (polite)"},
+{who:"나",me:1,en:"홍대입구역으로 가 주세요.",ko:"Please take me to Hongdae Station.",pr:'Hongdaeipguyeogeuro ga juseyo. (Tip: 홍대입구 is said as one smooth word: "hongdaeipgu".)',words:"<b>홍대입구역</b> Hongdae Station · <b>으로</b> to · <b>가</b> to go · <b>주세요</b> please"},
+{who:"나",me:1,en:"얼마나 걸려요?",ko:"How long does it take?",pr:"Eolmana geollyeoyo?",words:"<b>얼마나</b> how long · <b>걸려요</b> does it take"},
+{who:"기사",en:"한 20분쯤 걸릴 거예요.",ko:"It'll take about 20 minutes.",pr:"Han isipbun jjeum geollil geoyeyo.",words:"<b>한</b> about · <b>20분</b> 20 minutes · <b>쯤</b> around · <b>걸릴</b> will take · <b>거예요</b> it will be"},
+{who:"나",me:1,en:"여기서 내려 주세요.",ko:"Please let me off here.",pr:"Yeogiseo naeryeo juseyo.",words:"<b>여기서</b> here · <b>내려</b> to get off · <b>주세요</b> please"}
+]},
+{id:1010,batch:1,cat:"여행·숙소",title:"호텔 체크인하기",scene:"Checking in at a hotel",tags:["호텔","예약","체크인"],lines:[
+{who:"나",me:1,en:"안녕하세요. 체크인 하려고 해요.",ko:"Hello. I'd like to check in.",pr:"Annyeonghaseyo. Chekeuin haryeogo haeyo.",words:"<b>안녕하세요</b> hello · <b>체크인</b> check-in · <b>하려고</b> to do · <b>해요</b> I would like to"},
+{who:"직원",en:"예약하신 이름이 어떻게 되세요?",ko:"What name is the reservation under?",pr:'Yeyakhasin ireumi eotteoke doeseyo? (Tip: 어떻게 is pronounced "eotteoke" — the ㅎ makes the next sound tense.)',words:"<b>예약하신</b> reserved (polite) · <b>이름</b> name · <b>이</b> (subject marker) · <b>어떻게</b> how · <b>되세요</b> may it be"},
+{who:"나",me:1,en:"김민준이라는 이름으로 예약했어요.",ko:"I booked it under the name Kim Minjun.",pr:"Gimminjuniraneun ireumeuro yeyakhaesseoyo.",words:"<b>김민준</b> Kim Minjun (a person's name) · <b>이라는</b> called · <b>이름</b> name · <b>으로</b> under · <b>예약했어요</b> I booked"},
+{who:"직원",en:"네, 확인했어요. 여권 보여 주시겠어요?",ko:"Sure, I found it. Could you show me your passport, please?",pr:"Ne, hwaginhasseoyo. Yeogwon boyeo jusigesseoyo?",words:"<b>네</b> yes · <b>확인했어요</b> I checked · <b>여권</b> passport · <b>보여</b> to show · <b>주시겠어요</b> could you please"},
+{who:"나",me:1,en:"네, 여기 있어요.",ko:"Yes, here it is.",pr:"Ne, yeogi isseoyo.",words:"<b>네</b> yes · <b>여기</b> here · <b>있어요</b> there is"},
+{who:"직원",en:"방은 3층 305호예요. 즐거운 시간 보내세요.",ko:"Your room is 305 on the 3rd floor. Have a pleasant stay.",pr:"Bangeun samcheung sambaegoho yeyo. Jeulgeoun sigan bonaeseyo.",words:"<b>방</b> room · <b>은</b> (topic marker) · <b>3층</b> 3rd floor · <b>305호</b> room 305 · <b>예요</b> is · <b>즐거운</b> pleasant · <b>시간</b> time · <b>보내세요</b> please have / spend"}
+]}
+];
+var langMode="en", enCurBatch=null, koCurBatch=1, curViewMode="list";
+function ttsLang(){ return langMode==="ko" ? "ko-KR" : "en-US"; }
+function normalizeKo(t){ return String(t||"").replace(/[\s.,!?~'"’‘“”·…()\-:;]/g,""); }
+function setLang(m){
+  if(m!=="en" && m!=="ko") return;
+  if(langMode==="en") enCurBatch=curBatch; else koCurBatch=curBatch;
+  langMode=m;
+  if(m==="ko"){ SKITS=KO_SKITS; BATCHES=KO_BATCHES; curBatch=koCurBatch||1; }
+  else { SKITS=EN_SKITS; BATCHES=EN_BATCHES; curBatch=enCurBatch||EN_BATCHES[EN_BATCHES.length-1].id; }
+  curCat="전체"; quizCurrent=null; reviewIdx=0; reviewReveal=false;
+  document.getElementById("langEnBtn").classList.toggle("active", m==="en");
+  document.getElementById("langKoBtn").classList.toggle("active", m==="ko");
+  document.getElementById("tabPhonics").style.display=(m==="ko")?"none":"";
+  document.getElementById("tabNgsl").style.display=(m==="ko")?"none":"";
+  document.getElementById("statSkits").textContent=SKITS.length;
+  document.getElementById("statLines").textContent=SKITS.reduce(function(a,s){return a+s.lines.length},0);
+  var tglLabels=(m==="ko")?["영어 뜻","로마자 발음","단어별 뜻"]:["한글 뜻","한글 발음","단어 풀이"];
+  document.querySelectorAll("[data-toggle]").forEach(function(b,i){ if(tglLabels[i]) b.textContent=tglLabels[i]; });
+  var srch=document.getElementById("search"); if(srch) srch.value="";
+  if(srch) srch.placeholder=(m==="ko")?"검색: 편의점, 카페, 지하철, 감사합니다… (전체 날짜에서 검색)":"검색: 편의점, 라떼, 길 묻기, receipt… (전체 날짜에서 검색)";
+  var ht=document.getElementById("heroTitle"), hx=document.getElementById("heroText");
+  if(ht) ht.innerHTML=(m==="ko")?"한국어 말문이 트이는 건,<br>대화를 통째로 익힐 때예요.":"말문이 트이는 건,<br>대화를 통째로 익힐 때예요.";
+  if(hx) hx.innerHTML=(m==="ko")?"Learn Korean the way it is actually spoken. Each roleplay shows 한국어 → English meaning → romanized pronunciation → word-by-word meanings, so learners anywhere can follow along.":"문장 하나가 아니라 주고받는 대화로 익히세요. 각 상황극마다 영어 → 뜻 → 한글 발음 → 단어 하나하나의 뜻까지 한 번에 복습할 수 있습니다. 본문은 미국식 표현이고, 영국식과 다른 대사는 그 아래에 영국식 표현을 작게 함께 적어 뒀어요.";
+  var qh=document.getElementById("quizModeHint");
+  if(qh) qh.textContent=(m==="ko")?"쓰기: 앞 대사와 영어 뜻을 보고 한국어 문장을 직접 입력한 뒤 정답 확인을 누르세요. 말하기: 마이크 버튼을 누르고 한국어 문장을 말하면, 들은 문장을 자동으로 채점합니다.":"쓰기: 한글 뜻을 보고 영어 문장을 직접 입력한 뒤 정답 확인을 누르세요. 말하기: 마이크 버튼을 누르고 영어 문장을 말하면, 들은 문장을 자동으로 채점합니다.";
+  renderReviewSelect();
+  if((curViewMode==="phonics"||curViewMode==="ngsl") && m==="ko") switchMode("list");
+  else switchMode(curViewMode||"list");
+  syncHeaderH();
+}
 function batchById(id){ return BATCHES.find(function(b){return b.id===id}) || BATCHES[0]; }
 function skitsOfBatch(id){ return SKITS.filter(function(s){return s.batch===id}); }
 function localNum(s){ var list=skitsOfBatch(s.batch); return list.indexOf(s)+1; }
@@ -1473,7 +1673,7 @@ function speakLang(text,lang){
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   }catch(e){}
 }
-function speak(text){ speakLang(text,"en-US"); }
+function speak(text){ speakLang(text,ttsLang()); }
 document.addEventListener("click",function(e){
   var b=e.target&&e.target.closest?e.target.closest("[data-speak-uk]"):null;
   if(b) speakLang(b.getAttribute("data-speak-uk"),"en-GB");
@@ -1594,7 +1794,7 @@ function bindDynamic(){
     var s=SKITS.find(function(x){return x.id==b.getAttribute("data-play")});
     if(!s) return; var i=0;
     speechSynthesis.cancel();
-    function next(){ if(i>=s.lines.length) return; var u=new SpeechSynthesisUtterance(s.lines[i].en); u.lang="en-US"; u.rate=0.92; u.onend=function(){i++; setTimeout(next,350)}; speechSynthesis.speak(u); }
+    function next(){ if(i>=s.lines.length) return; var u=new SpeechSynthesisUtterance(s.lines[i].en); u.lang=ttsLang(); u.rate=0.92; u.onend=function(){i++; setTimeout(next,350)}; speechSynthesis.speak(u); }
     next();
   }});
   document.querySelectorAll("[data-done]").forEach(function(b){ b.onclick=function(){
@@ -1660,7 +1860,7 @@ function renderReview(){
   if(n) n.onclick=function(){ if(posInBatch<blist.length-1){ reviewIdx=SKITS.indexOf(blist[posInBatch+1]); reviewReveal=false; renderReview(); } };
   document.getElementById("playReview").onclick=function(){
     var i=0; speechSynthesis.cancel();
-    function next(){ if(i>=s.lines.length) return; var u=new SpeechSynthesisUtterance(s.lines[i].en); u.lang="en-US"; u.rate=0.92; u.onend=function(){i++; setTimeout(next,350)}; speechSynthesis.speak(u); } next();
+    function next(){ if(i>=s.lines.length) return; var u=new SpeechSynthesisUtterance(s.lines[i].en); u.lang=ttsLang(); u.rate=0.92; u.onend=function(){i++; setTimeout(next,350)}; speechSynthesis.speak(u); } next();
   };
   document.getElementById("doneReview").onclick=function(){ if(doneSet[s.id]) delete doneSet[s.id]; else doneSet[s.id]=1; document.getElementById("statDone").textContent=Object.keys(doneSet).length; renderReview(); renderGrid(); };
 }
@@ -1704,15 +1904,15 @@ function renderQuiz(){
     +'<div class="num">문제 모드 · '+b.id+'회차 '+b.display+' · 상황극 '+String(localNum(s)).padStart(2,"0")+'</div>'
     +'<p class="scene">'+s.scene+'</p>'
     +'<div class="quiz-context">'+context+'</div>'
-    +'<div class="quiz-prompt"><div class="speaker">'+q.line.who+'의 차례</div><div class="meaning">'+q.line.ko+'</div><p>이 뜻에 맞는 영어 문장을 직접 써 보세요.</p></div>'
-    +'<label class="answer-label" for="quizAnswer">내 영어 답</label>'
-    +'<input class="answer-input" id="quizAnswer" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="예: I brought my own bag.">'
+    +'<div class="quiz-prompt"><div class="speaker">'+q.line.who+'의 차례</div><div class="meaning">'+q.line.ko+'</div><p>'+(langMode==="ko"?"이 영어 뜻에 맞는 한국어 문장을 직접 써 보세요.":"이 뜻에 맞는 영어 문장을 직접 써 보세요.")+'</p></div>'
+    +'<label class="answer-label" for="quizAnswer">'+(langMode==="ko"?"내 한국어 답":"내 영어 답")+'</label>'
+    +'<input class="answer-input" id="quizAnswer" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="'+(langMode==="ko"?"예: 안녕하세요. 물 있어요?":"예: I brought my own bag.")+'">'
     +'<div class="quiz-actions"><button class="btn primary" type="button" id="checkQuizBtn">정답 확인</button><button class="btn mic" type="button" id="voiceQuizBtn">🎤 음성으로 답하기</button>'
     +(prev.length?'<button class="btn" type="button" id="listenPrevBtn">🔊 앞 대사 듣기</button>':"")
     +'<button class="btn" type="button" id="revealQuizBtn">정답 보기</button></div>'
     +'<div class="voice-status" id="voiceStatus" aria-live="polite"></div>'
     +'<div class="feedback" id="quizFeedback" aria-live="polite"></div>'
-    +'<div class="answer-details" id="quizDetails"><div style="font-size:12px;font-weight:900;color:var(--accent);margin-bottom:3px">정답</div><div class="correct-en">'+q.line.en+'</div>'+(q.line.uk?'<div class="correct-uk">영국식 · '+q.line.uk+'</div>':'')+'<div class="correct-pr">발음 · '+q.line.pr+'</div><div class="correct-words">'+q.line.words+'</div><button class="btn" type="button" id="listenAnswerBtn" style="margin-top:10px">🔊 정답 듣기</button></div>'
+    +'<div class="answer-details" id="quizDetails"><div style="font-size:12px;font-weight:900;color:var(--accent);margin-bottom:3px">정답</div><div class="correct-en">'+q.line.en+'</div>'+(q.line.uk?'<div class="correct-uk">영국식 · '+q.line.uk+'</div>':'')+'<div class="correct-pr">'+(langMode==="ko"?"로마자 발음 · ":"발음 · ")+q.line.pr+'</div><div class="correct-words">'+q.line.words+'</div><button class="btn" type="button" id="listenAnswerBtn" style="margin-top:10px">🔊 정답 듣기</button></div>'
     +'<button class="btn primary quiz-next" type="button" id="nextQuizBtn">다음 문제 →</button>';
 
   card.querySelectorAll("[data-speak]").forEach(function(btn){ btn.onclick=function(){speak(btn.getAttribute("data-speak"))}; });
@@ -1775,8 +1975,9 @@ function checkQuizAnswer(source){
     input.focus(); return;
   }
   quizAttemptsCurrent++; quizStats.attempts++; updateQuizStats();
-  var userNorm=normalizeAnswer(raw), targetNorm=normalizeAnswer(quizCurrent.line.en);
-  var ukNorm=quizCurrent.line.uk?normalizeAnswer(quizCurrent.line.uk):null;
+  var userNorm, targetNorm, ukNorm=null;
+  if(langMode==="ko"){ userNorm=normalizeKo(raw); targetNorm=normalizeKo(quizCurrent.line.en); }
+  else { userNorm=normalizeAnswer(raw); targetNorm=normalizeAnswer(quizCurrent.line.en); ukNorm=quizCurrent.line.uk?normalizeAnswer(quizCurrent.line.uk):null; }
   if(userNorm===targetNorm || (ukNorm && userNorm===ukNorm)){
     quizFinished=true;
     if(!quizCounted){ quizStats.correct++; quizCounted=true; updateQuizStats(); }
@@ -1792,7 +1993,7 @@ function checkQuizAnswer(source){
   }
   var sim=Math.max(answerSimilarity(userNorm,targetNorm), ukNorm?answerSimilarity(userNorm,ukNorm):0);
   feedback.className="feedback show try";
-  feedback.innerHTML="<strong>"+(sim>=0.82?"거의 다 왔어요!":"아직 조금 달라요.")+"</strong>"+quizHint(userNorm,targetNorm)+" 한 번 더 고쳐서 확인해 보세요.";
+  feedback.innerHTML="<strong>"+(sim>=0.82?"거의 다 왔어요!":"아직 조금 달라요.")+"</strong>"+(langMode==="ko"?"한국어 문장을 한 번 더 확인해 보세요. 조사(은/는, 이/가, 을/를)와 어미를 살펴보면 좋아요.":quizHint(userNorm,targetNorm))+" 한 번 더 고쳐서 확인해 보세요.";
 }
 function revealQuizAnswer(){
   if(!quizCurrent || quizFinished) return;
@@ -1811,13 +2012,14 @@ function startVoiceAnswer(){
   }
   if(quizListening && quizRecognition){ try{quizRecognition.stop();}catch(e){} return; }
   try{ quizRecognition=new SR(); }catch(e){ status.textContent="음성 인식을 시작하지 못했어요. 직접 입력해서 답해 보세요."; return; }
-  quizRecognition.lang="en-US"; quizRecognition.interimResults=false; quizRecognition.continuous=false; quizRecognition.maxAlternatives=3;
+  quizRecognition.lang=ttsLang(); quizRecognition.interimResults=false; quizRecognition.continuous=false; quizRecognition.maxAlternatives=3;
   quizListening=true; mic.classList.add("listening"); mic.textContent="● 듣고 있어요… 중단하려면 다시 누르기";
-  status.textContent="영어 문장을 말해 주세요. 끝나면 자동으로 채점합니다.";
+  status.textContent=(langMode==="ko"?"한국어":"영어")+" 문장을 말해 주세요. 끝나면 자동으로 채점합니다.";
   quizRecognition.onresult=function(event){
-    var result=event.results[event.resultIndex], chosen=result[0].transcript, targetNorm=normalizeAnswer(quizCurrent.line.en), ukNorm=quizCurrent.line.uk?normalizeAnswer(quizCurrent.line.uk):null;
+    var result=event.results[event.resultIndex], chosen=result[0].transcript;
+    var targetNorm=(langMode==="ko"?normalizeKo(quizCurrent.line.en):normalizeAnswer(quizCurrent.line.en)), ukNorm=(langMode!=="ko"&&quizCurrent.line.uk)?normalizeAnswer(quizCurrent.line.uk):null;
     for(var i=0;i<result.length;i++){
-      var altNorm=normalizeAnswer(result[i].transcript);
+      var altNorm=(langMode==="ko"?normalizeKo(result[i].transcript):normalizeAnswer(result[i].transcript));
       if(altNorm===targetNorm || (ukNorm && altNorm===ukNorm)){ chosen=result[i].transcript; break; }
     }
     document.getElementById("quizAnswer").value=chosen;
@@ -2449,17 +2651,20 @@ function applyPhonicsSub(){
 function switchPhonicsSub(t){ phSub=t; applyPhonicsSub(); }
 
 function switchMode(m){
-  var isReview=m==="review", isQuiz=m==="quiz", isPhonics=m==="phonics", isNgsl=m==="ngsl";
-  document.getElementById("listView").style.display=(isReview||isQuiz||isPhonics||isNgsl)?"none":"";
+  curViewMode=m;
+  var isReview=m==="review", isQuiz=m==="quiz", isPhonics=m==="phonics", isNgsl=m==="ngsl", isChat=m==="chat";
+  document.getElementById("listView").style.display=(isReview||isQuiz||isPhonics||isNgsl||isChat)?"none":"";
   document.getElementById("reviewView").style.display=isReview?"block":"none";
   document.getElementById("quizView").style.display=isQuiz?"block":"none";
   document.getElementById("phonicsView").style.display=isPhonics?"block":"none";
   document.getElementById("ngslView").style.display=isNgsl?"block":"none";
-  document.getElementById("tabList").classList.toggle("active",!isReview && !isQuiz && !isPhonics && !isNgsl);
+  document.getElementById("chatView").style.display=isChat?"block":"none";
+  document.getElementById("tabList").classList.toggle("active",!isReview && !isQuiz && !isPhonics && !isNgsl && !isChat);
   document.getElementById("tabReview").classList.toggle("active",isReview);
   document.getElementById("tabQuiz").classList.toggle("active",isQuiz);
   document.getElementById("tabPhonics").classList.toggle("active",isPhonics);
   document.getElementById("tabNgsl").classList.toggle("active",isNgsl);
+  document.getElementById("tabChat").classList.toggle("active",isChat);
   if(isReview){ /* 복습은 현재 보고 있는 날짜의 첫 상황극부터 */
     var first=skitsOfBatch(curBatch)[0]; if(first && SKITS[reviewIdx] && SKITS[reviewIdx].batch!==curBatch) reviewIdx=SKITS.indexOf(first);
     renderReviewSelect(); renderReview();
@@ -2482,6 +2687,7 @@ document.getElementById("tabReview").onclick=function(){switchMode("review")};
 document.getElementById("tabQuiz").onclick=function(){switchMode("quiz")};
 document.getElementById("tabPhonics").onclick=function(){switchMode("phonics")};
 document.getElementById("tabNgsl").onclick=function(){switchMode("ngsl")};
+document.getElementById("tabChat").onclick=function(){switchMode("chat")};
 document.getElementById("phTabRules").onclick=function(){switchPhonicsSub("rules")};
 document.getElementById("phTabQuiz").onclick=function(){switchPhonicsSub("quiz")};
 document.getElementById("phonicsStageSel").onchange=function(){
@@ -2609,6 +2815,117 @@ document.querySelectorAll("[data-goto-pane]").forEach(function(b){
   syncHeaderH();
   window.addEventListener("load", syncHeaderH);
   setTimeout(syncHeaderH, 400);
+})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function(){
+  var eb=document.getElementById("langEnBtn"), kb=document.getElementById("langKoBtn");
+  if(eb) eb.onclick=function(){ setLang("en"); };
+  if(kb) kb.onclick=function(){ setLang("ko"); };
+  function $(id){ return document.getElementById(id); }
+  function escHtml(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function kstToday(){ try{ return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date()); }catch(e){ var d=new Date(Date.now()+9*3600*1000); return d.toISOString().slice(0,10); } }
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyAIQUUo_Cwy_ONX764mTnLHfTBdTLRkJGk",
+    authDomain: "daily-english-roleplays.firebaseapp.com",
+    databaseURL: "https://daily-english-roleplays-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "daily-english-roleplays",
+    storageBucket: "daily-english-roleplays.firebasestorage.app",
+    messagingSenderId: "1000897570442",
+    appId: "1:1000897570442:web:12bbea8f0b96edbe83af73"
+  };
+  var db=null;
+  try{ if(typeof firebase!=="undefined"){ firebase.initializeApp(firebaseConfig); db=firebase.database(); } }catch(e){ db=null; }
+
+  /* ===== 방문자 카운터: 지금 · 오늘 · 누적 ===== */
+  if(db){
+    try{
+      var today=kstToday();
+      var counted=false; try{ counted=window.localStorage.getItem("der_visit_date")===today; }catch(e){}
+      if(!counted){
+        var inc=function(v){ return (v||0)+1; };
+        db.ref("roleplays-counter/total").transaction(inc);
+        db.ref("roleplays-counter/daily/"+today).transaction(inc);
+        try{ window.localStorage.setItem("der_visit_date", today); }catch(e){}
+      }
+      db.ref("roleplays-counter/total").on("value",function(s){ var el=$("vcTotal"); if(el) el.textContent=(s.val()||0).toLocaleString(); });
+      db.ref("roleplays-counter/daily/"+today).on("value",function(s){ var el=$("vcToday"); if(el) el.textContent=(s.val()||0).toLocaleString(); });
+      var myId="u"+Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+      var myRef=db.ref("roleplays-counter/online/"+myId);
+      var beat=function(){ try{ myRef.set({t:Date.now()}); }catch(e){} };
+      beat();
+      try{ myRef.onDisconnect().remove(); }catch(e){}
+      setInterval(beat,30000);
+      try{ db.ref(".info/connected").on("value",function(s){ if(s.val()===true){ beat(); try{ myRef.onDisconnect().remove(); }catch(e){} } }); }catch(e){}
+      var lastOnline=null;
+      var renderOnline=function(){ if(!lastOnline) return; var now=Date.now(), n=0; lastOnline.forEach(function(c){ var v=c.val(); if(v && v.t && (now-v.t)<120000) n++; }); var el=$("vcNow"); if(el) el.textContent=n.toLocaleString(); };
+      db.ref("roleplays-counter/online").on("value",function(s){ lastOnline=s; renderOnline(); });
+      setInterval(renderOnline,30000);
+    }catch(e){}
+  }
+
+  /* ===== 채팅 ===== */
+  var COUNTRIES=[["KR","South Korea","한국"],["US","United States","미국"],["GB","United Kingdom","영국"],["CA","Canada","캐나다"],["AU","Australia","호주"],["NZ","New Zealand","뉴질랜드"],["JP","Japan","일본"],["CN","China","중국"],["TW","Taiwan","대만"],["HK","Hong Kong","홍콩"],["VN","Vietnam","베트남"],["TH","Thailand","태국"],["PH","Philippines","필리핀"],["ID","Indonesia","인도네시아"],["MY","Malaysia","말레이시아"],["SG","Singapore","싱가포르"],["IN","India","인도"],["DE","Germany","독일"],["FR","France","프랑스"],["ES","Spain","스페인"],["IT","Italy","이탈리아"],["PT","Portugal","포르투갈"],["NL","Netherlands","네덜란드"],["SE","Sweden","스웨덴"],["NO","Norway","노르웨이"],["DK","Denmark","덴마크"],["FI","Finland","핀란드"],["PL","Poland","폴란드"],["TR","Türkiye","튀르키예"],["RU","Russia","러시아"],["UA","Ukraine","우크라이나"],["BR","Brazil","브라질"],["MX","Mexico","멕시코"],["AR","Argentina","아르헨티나"],["CL","Chile","칠레"],["CO","Colombia","콜롬비아"],["PE","Peru","페루"],["ZA","South Africa","남아공"],["EG","Egypt","이집트"],["NG","Nigeria","나이지리아"],["KE","Kenya","케냐"],["SA","Saudi Arabia","사우디아라비아"],["AE","UAE","아랍에미리트"],["IL","Israel","이스라엘"],["PK","Pakistan","파키스탄"],["BD","Bangladesh","방글라데시"],["MM","Myanmar","미얀마"],["KH","Cambodia","캄보디아"],["MN","Mongolia","몽골"],["GR","Greece","그리스"],["AT","Austria","오스트리아"],["CH","Switzerland","스위스"],["BE","Belgium","벨기에"],["IE","Ireland","아일랜드"],["CZ","Czechia","체코"],["HU","Hungary","헝가리"],["RO","Romania","루마니아"]];
+  function flagOf(code){ if(!code||code.length!==2) return "🌐"; code=code.toUpperCase(); return String.fromCodePoint(0x1F1E6+code.charCodeAt(0)-65,0x1F1E6+code.charCodeAt(1)-65); }
+  function countryByCode(code){ for(var i=0;i<COUNTRIES.length;i++){ if(COUNTRIES[i][0]===code) return COUNTRIES[i]; } return null; }
+  var sel=$("chatCountrySel"), badge=$("chatCountryBadge"), myCountry=null;
+  if(sel) sel.innerHTML=COUNTRIES.map(function(c){ return '<option value="'+c[0]+'">'+flagOf(c[0])+" "+c[1]+" · "+c[2]+"</option>"; }).join("");
+  function setCountry(code,name,flag){
+    var c=countryByCode(code);
+    myCountry={ code:code||"", name:(c?c[1]:(name||"Unknown")), nameKo:(c?c[2]:""), flag:flag||flagOf(code) };
+    if(badge) badge.textContent=myCountry.flag+" "+myCountry.name+(myCountry.nameKo?" · "+myCountry.nameKo:"");
+    if(sel && code && countryByCode(code)) sel.value=code;
+  }
+  if(sel) sel.addEventListener("change",function(){ setCountry(sel.value); });
+  var savedName="", savedCountry=null;
+  try{ savedName=window.localStorage.getItem("der_chat_name")||""; var sc=window.localStorage.getItem("der_chat_country"); if(sc) savedCountry=JSON.parse(sc); }catch(e){}
+  if(savedName && $("chatName")) $("chatName").value=savedName;
+  if(savedCountry && savedCountry.code) setCountry(savedCountry.code, savedCountry.name, savedCountry.flag);
+  try{
+    fetch("https://ipwho.is/").then(function(r){ return r.json(); }).then(function(d){
+      if(d && d.success!==false && d.country_code){ if(!savedCountry) setCountry(d.country_code, d.country, (d.flag&&d.flag.emoji)?d.flag.emoji:null); }
+      else if(!savedCountry && badge) badge.textContent="🌐 나라를 골라 주세요 / Please choose your country";
+    }).catch(function(){ if(!savedCountry && badge) badge.textContent="🌐 나라를 골라 주세요 / Please choose your country"; });
+  }catch(e){ if(!savedCountry && badge) badge.textContent="🌐 나라를 골라 주세요 / Please choose your country"; }
+
+  function fmtTime(t){ try{ return new Date(t).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}); }catch(e){ return ""; } }
+  function renderMsgs(snap){
+    var box=$("chatMsgs"); if(!box) return;
+    var arr=[]; snap.forEach(function(c){ var v=c.val(); if(v) arr.push(v); });
+    if(!arr.length){ box.innerHTML='<div class="chat-empty">아직 메시지가 없어요. 첫 인사를 남겨 보세요!<br>No messages yet — say hello first!</div>'; return; }
+    box.innerHTML=arr.map(function(m){
+      return '<div class="chat-msg"><div class="cm-head"><span class="cm-name">'+escHtml(m.f||"🌐")+" "+escHtml(m.n||"")+'</span><span>'+escHtml(m.c||"")+'</span><span>'+escHtml(fmtTime(m.t))+'</span></div><div class="cm-text">'+escHtml(m.m||"")+'</div></div>';
+    }).join("");
+    box.scrollTop=box.scrollHeight;
+  }
+  if(db){ try{ db.ref("chat/messages").limitToLast(100).on("value",renderMsgs); }catch(e){ var st=$("chatStatus"); if(st) st.textContent="채팅을 불러오지 못했어요. / Could not load chat."; } }
+  else { var st0=$("chatStatus"); if(st0) st0.textContent="채팅 서버에 연결하지 못했어요. 새로고침해 보세요. / Chat is unavailable right now."; }
+
+  function join(auto){
+    var name=($("chatName").value||"").trim().slice(0,20);
+    if(!name){ if(!auto){ $("chatStatus").textContent="닉네임을 적어 주세요. / Please enter a nickname."; $("chatName").focus(); } return; }
+    if(!myCountry) setCountry(sel?sel.value:"KR");
+    try{ window.localStorage.setItem("der_chat_name",name); window.localStorage.setItem("der_chat_country",JSON.stringify(myCountry)); }catch(e){}
+    $("chatMeLabel").textContent=myCountry.flag+" "+name+" · "+myCountry.name+(myCountry.nameKo?" ("+myCountry.nameKo+")":"");
+    $("chatSetup").style.display="none"; $("chatMain").style.display="";
+    if(!auto){ $("chatStatus").textContent=""; var box=$("chatMsgs"); if(box) box.scrollTop=box.scrollHeight; $("chatInput").focus(); }
+  }
+  var jb=$("chatJoinBtn"); if(jb) jb.onclick=function(){ join(false); };
+  var eb2=$("chatEditBtn"); if(eb2) eb2.onclick=function(){ $("chatSetup").style.display=""; $("chatMain").style.display="none"; };
+  if(savedName) join(true);
+  function send(){
+    if(!db){ $("chatStatus").textContent="채팅 서버에 연결하지 못했어요. / Chat is unavailable."; return; }
+    var input=$("chatInput"); var text=(input.value||"").trim().slice(0,500);
+    if(!text) return;
+    var name=(($("chatName").value||"").trim().slice(0,20))||"익명";
+    if(!myCountry) setCountry("KR");
+    db.ref("chat/messages").push({ n:name, f:myCountry.flag, c:myCountry.name, m:text, t:firebase.database.ServerValue.TIMESTAMP }).then(function(){ input.value=""; input.focus(); }).catch(function(){ $("chatStatus").textContent="전송에 실패했어요. 다시 시도해 보세요. / Failed to send."; });
+  }
+  var sb=$("chatSendBtn"); if(sb) sb.onclick=send;
+  var ci=$("chatInput"); if(ci) ci.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); send(); } });
 })();
 </script>
 </body>
