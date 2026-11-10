@@ -376,6 +376,23 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:10px 0 0}
 .chat-input-row .chat-input{flex:1}
 .chat-send{flex:0 0 auto;padding:0 20px}
 .chat-status{font-size:13px;color:var(--muted);margin:10px 0 0;min-height:20px}
+.chat-msgs-wrap{position:relative;margin-top:12px}
+.chat-msgs-wrap .chat-msgs{margin-top:0}
+.chat-new-btn{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;border:0;border-radius:999px;background:var(--accent);color:#fff;font-weight:800;font-size:13px;padding:8px 16px;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;display:none;white-space:nowrap;z-index:2}
+.cm-foot{margin-top:5px}
+.cm-tr-btn{border:1px solid var(--line);background:var(--surface2);color:var(--muted);border-radius:999px;font-size:11.5px;font-weight:700;padding:3px 10px;cursor:pointer}
+.cm-tr-btn:hover{color:var(--ink)}
+.cm-tr-btn:disabled{opacity:.6;cursor:default}
+.cm-trans{margin-top:6px;padding:7px 10px;background:var(--surface2);border-radius:9px;font-size:14px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.cm-trans-label{font-size:11px;font-weight:800;color:var(--accent);display:block;margin-bottom:2px}
+.chat-suggest{display:none;margin-top:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface2);padding:10px 12px}
+.chat-suggest .sg-title{font-size:12px;font-weight:900;color:var(--muted);margin:0 0 8px}
+.sg-list{display:flex;flex-direction:column;gap:7px}
+.sg-btn{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:11px;padding:8px 11px;cursor:pointer;color:var(--ink);width:100%}
+.sg-btn:hover{border-color:var(--accent)}
+.sg-en{font-size:14.5px;font-weight:800;line-height:1.4}
+.sg-ko{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+.chat-tr-input-btn{flex:0 0 auto;padding:0 14px}
 @media(max-width:520px){.chat-card{padding:17px}.chat-msgs{height:320px}}
 </style>
 </head>
@@ -650,10 +667,18 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:10px 0 0}
         </div>
         <div id="chatMain" style="display:none">
           <div class="chat-me"><span>내 정보 / Me:</span> <b id="chatMeLabel"></b> <button class="btn" id="chatEditBtn" type="button">바꾸기 / Change</button></div>
-          <div class="chat-msgs" id="chatMsgs" aria-live="polite"><div class="chat-empty">불러오는 중… / Loading…</div></div>
+          <div class="chat-msgs-wrap">
+            <div class="chat-msgs" id="chatMsgs" aria-live="polite"><div class="chat-empty">불러오는 중… / Loading…</div></div>
+            <button class="chat-new-btn" id="chatNewBtn" type="button">↓ 새 메시지 보기 / New messages</button>
+          </div>
           <p class="chat-warn">⚠ 욕설·비방과 개인정보(전화번호·주소 등)는 올리지 마세요. / Please be kind — no insults, and don't share personal information.</p>
+          <div class="chat-suggest" id="chatSuggest">
+            <p class="sg-title">💡 이렇게 답해 보세요 / Try replying like this</p>
+            <div class="sg-list" id="chatSuggestList"></div>
+          </div>
           <div class="chat-input-row">
             <input class="chat-input" id="chatInput" type="text" maxlength="500" autocomplete="off" placeholder="메시지 입력 / Type a message" aria-label="메시지 입력 / Type a message">
+            <button class="btn chat-tr-input-btn" id="chatTrBtn" type="button">번역 / Translate</button>
             <button class="btn primary chat-send" id="chatSendBtn" type="button">전송 / Send</button>
           </div>
         </div>
@@ -2892,15 +2917,179 @@ document.querySelectorAll("[data-goto-pane]").forEach(function(b){
   }catch(e){ if(!savedCountry && badge) badge.textContent="🌐 나라를 골라 주세요 / Please choose your country"; }
 
   function fmtTime(t){ try{ return new Date(t).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}); }catch(e){ return ""; } }
+  /* ===== 번역 (MyMemory 무료 API) ===== */
+  function hasKorean(s){ return /[\u3130-\u318F\uAC00-\uD7A3]/.test(s||""); }
+  function myMemoryTranslate(text, from, to){
+    var url="https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair="+from+"%7C"+to;
+    return fetch(url).then(function(r){ return r.json(); }).then(function(d){
+      var t=d && d.responseData && d.responseData.translatedText;
+      if(!t || (d.responseStatus && String(d.responseStatus)!=="200")) throw new Error("translate failed");
+      return t;
+    });
+  }
+  var transCache={}; /* 메시지 키 -> {ok:true,text} 또는 {ok:false}; 한 번 받은 번역은 다시 부르지 않아요 */
+  var msgTextByKey={};
+  function transHtml(key){
+    var c=transCache[key]; if(!c) return "";
+    if(!c.ok) return '<div class="cm-trans" data-trans="'+key+'">번역 실패 / Translation failed</div>';
+    return '<div class="cm-trans" data-trans="'+key+'"><span class="cm-trans-label">번역 / Translation</span>'+escHtml(c.text)+'</div>';
+  }
+
+  /* ===== 예시 답장 (규칙 기반, 자연스러운 미국식 영어) ===== */
+  var REPLY_RULES=[
+    { re:/how are you|how'?s it going|how is it going|how do you feel|how are things|how'?s your day/, r:[
+      ["I'm good, thank you. How about you?","좋아요, 고마워요. 당신은요?","아임 굿, 땡큐. 하우 어바웃 츄?"],
+      ["Pretty good, thanks! And you?","꽤 좋아요, 고마워요! 당신은요?","프리티 굿, 땡스! 앤쥬?"],
+      ["Doing great today. How are you doing?","오늘 아주 좋아요. 당신은요?","두잉 그레잇 터데이. 하우 아 유 두잉?"]]},
+    { re:/where are you from|where do you live|which country|your country/, r:[
+      ["I'm from South Korea. How about you?","저는 한국에서 왔어요. 당신은요?","아임 프롬 싸우스 코리아. 하우 어바웃 츄?"],
+      ["I live in Korea. Where are you from?","저는 한국에 살아요. 어디서 오셨어요?","아이 리브 인 코리아. 웨어 아 유 프롬?"],
+      ["I'm Korean. What about you?","저는 한국인이에요. 당신은요?","아임 코리안. 왓 어바웃 츄?"]]},
+    { re:/what do you do|your job|do you work|do you study|for a living/, r:[
+      ["I'm a student. What do you do?","저는 학생이에요. 무슨 일 하세요?","아임 어 스튜던트. 왓 두 유 두?"],
+      ["I work at an office. How about you?","저는 회사원이에요. 당신은요?","아이 워크 앳 언 오피스. 하우 어바웃 츄?"],
+      ["I'm still studying. What about you?","아직 공부 중이에요. 당신은요?","아임 스틸 스터디잉. 왓 어바웃 츄?"]]},
+    { re:/hobb|free time|for fun|like to do|spare time/, r:[
+      ["I like listening to music in my free time.","저는 쉬는 시간에 음악 듣는 걸 좋아해요.","아이 라이크 리스닝 투 뮤직 인 마이 프리 타임."],
+      ["I enjoy going for a run. What about you?","저는 달리기하는 걸 즐겨요. 당신은요?","아이 인조이 고잉 퍼 러 런. 왓 어바웃 츄?"],
+      ["I love watching movies. How about you?","영화 보는 걸 정말 좋아해요. 당신은요?","아이 러브 와칭 무비스. 하우 어바웃 츄?"]]},
+    { re:/weather|sunny|raining|rainy|cold|hot today|snowing|snow/, r:[
+      ["It's nice and sunny here today.","여기는 오늘 날씨가 맑고 좋아요.","잇츠 나이스 앤 써니 히어 터데이."],
+      ["It's a little cold here. How's the weather there?","여기는 조금 추워요. 그쪽 날씨는 어때요?","잇츠 어 리를 콜드 히어. 하우즈 더 웨더 데어?"],
+      ["It's raining here today. What about there?","여기는 오늘 비가 와요. 그쪽은요?","잇츠 레이닝 히어 터데이. 왓 어바웃 데어?"]]},
+    { re:/food|eat|lunch|dinner|breakfast|hungry|cook|meal/, r:[
+      ["I just had lunch. It was really good.","방금 점심 먹었어요. 정말 맛있었어요.","아이 저스트 해드 런치. 잇 워즈 리얼리 굿."],
+      ["I love Korean food. What do you like to eat?","저는 한국 음식을 좋아해요. 어떤 음식을 좋아하세요?","아이 러브 코리안 푸드. 왓 두 유 라이크 투 잇?"],
+      ["I'm a little hungry, actually. How about you?","사실 조금 배고파요. 당신은요?","아임 어 리를 헝그리, 액츄얼리. 하우 어바웃 츄?"]]},
+    { re:/weekend|saturday|sunday|any plans|plans today|day off/, r:[
+      ["I'm just taking it easy this weekend.","이번 주말은 그냥 푹 쉴 거예요.","아임 저스트 테이킹 잇 이지 디스 위켄드."],
+      ["I'm meeting some friends this weekend. What about you?","이번 주말에 친구들을 만날 거예요. 당신은요?","아임 미팅 썸 프렌즈 디스 위켄드. 왓 어바웃 츄?"],
+      ["No big plans, just relaxing at home.","특별한 계획은 없고 집에서 쉴 거예요.","노 빅 플랜즈, 저스트 릴랙싱 앳 홈."]]},
+    { re:/thank|thanks|thx/, r:[
+      ["You're welcome!","천만에요!","유어 웰컴!"],
+      ["No problem at all.","전혀 문제없어요.","노 프라블럼 앳 올."],
+      ["Anytime! Glad I could help.","언제든지요! 도움이 돼서 기뻐요.","애니타임! 글래드 아이 쿧 헬프."]]},
+    { re:/\bbye\b|goodbye|good night|see you|gotta go|have to go|gtg/, r:[
+      ["Bye! It was nice talking to you.","안녕히 가세요! 얘기해서 즐거웠어요.","바이! 잇 워즈 나이스 토킹 투 유."],
+      ["See you later! Take care.","나중에 봐요! 잘 지내세요.","씨 유 레이러! 테이크 케어."],
+      ["Good night! Talk to you soon.","잘 자요! 곧 또 얘기해요.","굿 나잇! 톡 투 유 쑨."]]},
+    { re:/your name|who are you|introduce yourself/, r:[
+      ["Nice to meet you too!","저도 만나서 반가워요!","나이스 투 밋츄 투!"],
+      ["Glad to meet you! Where are you from?","만나서 기뻐요! 어디서 오셨어요?","글래드 투 밋츄! 웨어 아 유 프롬?"],
+      ["Nice to meet you! I'm still learning English.","반가워요! 저 아직 영어 배우는 중이에요.","나이스 투 밋츄! 아임 스틸 러닝 잉글리쉬."]]},
+    { re:/learn|studying|study|practice|english|korean language/, r:[
+      ["I'm learning English a little every day.","저는 매일 조금씩 영어를 배우고 있어요.","아임 러닝 잉글리쉬 어 리를 에브리 데이."],
+      ["I'm still learning, so please go easy on me.","아직 배우는 중이니 잘 부탁해요.","아임 스틸 러닝, 쏘 플리즈 고 이지 온 미."],
+      ["I practice English every day. How about you?","저는 매일 영어 연습을 해요. 당신은요?","아이 프랙티스 잉글리쉬 에브리 데이. 하우 어바웃 츄?"]]},
+    { re:/\b(hello|hi|hey)\b/, r:[
+      ["Hi there! Nice to meet you.","안녕하세요! 만나서 반가워요.","하이 데어! 나이스 투 밋츄."],
+      ["Hey! How's it going?","안녕! 어떻게 지내?","헤이! 하우짓 고잉?"],
+      ["Hello! Good to see you here.","안녕하세요! 여기서 만나 반가워요.","헬로우! 굿 투 씨 유 히어."]]}
+  ];
+  var DEFAULT_REPLIES=[
+    ["That sounds great!","그거 좋네요!","댓 싸운즈 그레잇!"],
+    ["Oh really? Tell me more.","정말요? 더 얘기해 주세요.","오 리얼리? 텔 미 모어."],
+    ["That's interesting! What about you?","흥미롭네요! 당신은요?","댓츠 인트레스팅! 왓 어바웃 츄?"]
+  ];
+  function pickReplies(text){
+    var t=" "+String(text||"").toLowerCase()+" ";
+    for(var i=0;i<REPLY_RULES.length;i++){ if(REPLY_RULES[i].re.test(t)) return REPLY_RULES[i].r; }
+    return DEFAULT_REPLIES;
+  }
+  function showSuggest(text){
+    var wrap=$("chatSuggest"), list=$("chatSuggestList"); if(!wrap||!list) return;
+    list.innerHTML="";
+    pickReplies(text).forEach(function(r){
+      var b=document.createElement("button");
+      b.type="button"; b.className="sg-btn";
+      b.innerHTML='<div class="sg-en">'+escHtml(r[0])+'</div><div class="sg-ko">'+escHtml(r[1])+" · "+escHtml(r[2])+'</div>';
+      b.onclick=function(){ var inp=$("chatInput"); if(inp){ inp.value=r[0]; inp.focus(); } };
+      list.appendChild(b);
+    });
+    wrap.style.display="block";
+  }
+  function hideSuggest(){ var w=$("chatSuggest"); if(w) w.style.display="none"; }
+
+  /* ===== 메시지 목록: 오래된 메시지 위, 최신 메시지 아래, 자동 스크롤 ===== */
+  var seenMsgKeys={}, mySentKeys={}, chatInitDone=false;
   function renderMsgs(snap){
     var box=$("chatMsgs"); if(!box) return;
-    var arr=[]; snap.forEach(function(c){ var v=c.val(); if(v) arr.push(v); });
-    if(!arr.length){ box.innerHTML='<div class="chat-empty">아직 메시지가 없어요. 첫 인사를 남겨 보세요!<br>No messages yet — say hello first!</div>'; return; }
-    box.innerHTML=arr.map(function(m){
-      return '<div class="chat-msg"><div class="cm-head"><span class="cm-name">'+escHtml(m.f||"🌐")+" "+escHtml(m.n||"")+'</span><span>'+escHtml(m.c||"")+'</span><span>'+escHtml(fmtTime(m.t))+'</span></div><div class="cm-text">'+escHtml(m.m||"")+'</div></div>';
+    var arr=[]; snap.forEach(function(c){ var v=c.val(); if(v) arr.push({k:c.key, v:v}); });
+    if(!arr.length){ box.innerHTML='<div class="chat-empty">아직 메시지가 없어요. 첫 인사를 남겨 보세요!<br>No messages yet — say hello first!</div>'; chatInitDone=true; return; }
+    var firstLoad=!chatInitDone;
+    var wasBottom=(box.scrollHeight-box.scrollTop-box.clientHeight)<120;
+    var newOther=null;
+    arr.forEach(function(it){
+      msgTextByKey[it.k]=it.v.m||"";
+      if(!seenMsgKeys[it.k]){
+        seenMsgKeys[it.k]=true;
+        if(!firstLoad && !mySentKeys[it.k]) newOther=it.v;
+      }
+    });
+    box.innerHTML=arr.map(function(it){
+      var m=it.v;
+      return '<div class="chat-msg"><div class="cm-head"><span class="cm-name">'+escHtml(m.f||"🌐")+" "+escHtml(m.n||"")+'</span><span>'+escHtml(m.c||"")+'</span><span>'+escHtml(fmtTime(m.t))+'</span></div><div class="cm-text">'+escHtml(m.m||"")+'</div><div class="cm-foot"><button class="cm-tr-btn" type="button" data-trkey="'+it.k+'">번역 / Translate</button></div>'+transHtml(it.k)+'</div>';
     }).join("");
-    box.scrollTop=box.scrollHeight;
+    if(newOther) showSuggest(newOther.m||"");
+    chatInitDone=true;
+    var nb=$("chatNewBtn");
+    if(firstLoad || wasBottom){ box.scrollTop=box.scrollHeight; if(nb) nb.style.display="none"; }
+    else if(nb){ nb.style.display="block"; }
   }
+  var msgsBox=$("chatMsgs");
+  if(msgsBox){
+    msgsBox.addEventListener("scroll",function(){
+      var nb=$("chatNewBtn");
+      if(nb && (msgsBox.scrollHeight-msgsBox.scrollTop-msgsBox.clientHeight)<60) nb.style.display="none";
+    });
+    msgsBox.addEventListener("click",function(e){
+      var btn=(e.target && e.target.closest) ? e.target.closest(".cm-tr-btn") : null;
+      if(!btn) return;
+      var key=btn.getAttribute("data-trkey");
+      if(transCache[key]){
+        var area=msgsBox.querySelector('[data-trans="'+key+'"]');
+        if(area) area.style.display=(area.style.display==="none") ? "" : "none";
+        return;
+      }
+      var text=msgTextByKey[key]||"";
+      if(!text) return;
+      var from=hasKorean(text)?"ko":"en", to=hasKorean(text)?"en":"ko";
+      var oldLabel=btn.textContent;
+      btn.textContent="번역 중… / Translating…"; btn.disabled=true;
+      myMemoryTranslate(text,from,to).then(function(t){
+        transCache[key]={ok:true,text:t};
+      }).catch(function(){
+        transCache[key]={ok:false};
+      }).then(function(){
+        btn.textContent=oldLabel; btn.disabled=false;
+        if(btn.parentNode && btn.parentNode.parentNode){
+          var tmp=document.createElement("div");
+          tmp.innerHTML=transHtml(key);
+          if(tmp.firstChild) btn.parentNode.parentNode.appendChild(tmp.firstChild);
+        }
+      });
+    });
+  }
+  var newBtn=$("chatNewBtn");
+  if(newBtn) newBtn.onclick=function(){ var b=$("chatMsgs"); if(b) b.scrollTop=b.scrollHeight; newBtn.style.display="none"; };
+
+  /* ===== 입력창 번역: 한국어로 쓰면 영어로 바꿔 입력창에 넣어 줘요 ===== */
+  var itrBtn=$("chatTrBtn");
+  if(itrBtn) itrBtn.onclick=function(){
+    var input=$("chatInput"); if(!input) return;
+    var text=(input.value||"").trim();
+    if(!text){ $("chatStatus").textContent="번역할 문장을 입력창에 먼저 적어 주세요. / Type something first, then translate."; input.focus(); return; }
+    var from=hasKorean(text)?"ko":"en", to=hasKorean(text)?"en":"ko";
+    var oldLabel=itrBtn.textContent;
+    itrBtn.textContent="번역 중…"; itrBtn.disabled=true;
+    myMemoryTranslate(text,from,to).then(function(t){
+      input.value=t; input.focus();
+    }).catch(function(){
+      $("chatStatus").textContent="번역 실패 / Translation failed. 다시 시도해 보세요. / Please try again.";
+    }).then(function(){
+      itrBtn.textContent=oldLabel; itrBtn.disabled=false;
+    });
+  };
   if(db){ try{ db.ref("chat/messages").limitToLast(100).on("value",renderMsgs); }catch(e){ var st=$("chatStatus"); if(st) st.textContent="채팅을 불러오지 못했어요. / Could not load chat."; } }
   else { var st0=$("chatStatus"); if(st0) st0.textContent="채팅 서버에 연결하지 못했어요. 새로고침해 보세요. / Chat is unavailable right now."; }
 
@@ -2922,7 +3111,9 @@ document.querySelectorAll("[data-goto-pane]").forEach(function(b){
     if(!text) return;
     var name=(($("chatName").value||"").trim().slice(0,20))||"익명";
     if(!myCountry) setCountry("KR");
-    db.ref("chat/messages").push({ n:name, f:myCountry.flag, c:myCountry.name, m:text, t:firebase.database.ServerValue.TIMESTAMP }).then(function(){ input.value=""; input.focus(); }).catch(function(){ $("chatStatus").textContent="전송에 실패했어요. 다시 시도해 보세요. / Failed to send."; });
+    var pushRef=db.ref("chat/messages").push({ n:name, f:myCountry.flag, c:myCountry.name, m:text, t:firebase.database.ServerValue.TIMESTAMP });
+    if(pushRef && pushRef.key) mySentKeys[pushRef.key]=true;
+    pushRef.then(function(){ input.value=""; input.focus(); hideSuggest(); }).catch(function(){ $("chatStatus").textContent="전송에 실패했어요. 다시 시도해 보세요. / Failed to send."; });
   }
   var sb=$("chatSendBtn"); if(sb) sb.onclick=send;
   var ci=$("chatInput"); if(ci) ci.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); send(); } });
