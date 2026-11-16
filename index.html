@@ -77,13 +77,26 @@ button{font:inherit;cursor:pointer}
 .date-archive-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .date-archive-head h2{margin:0;font-size:16px;letter-spacing:-.02em}
 .date-archive-head p{margin:0;color:var(--muted);font-size:13px}
-.date-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px;margin-top:12px}
-.date-card{border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.week-bar{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.week-nav-btn{flex:0 0 auto;border:1.5px solid var(--accent);background:var(--surface);color:var(--accent);padding:9px 15px;border-radius:999px;font-weight:900;font-size:14px}
+.week-nav-btn:disabled{opacity:.35;cursor:not-allowed;border-color:var(--line);color:var(--muted)}
+.week-info{flex:1 1 auto;min-width:150px}
+.week-info b{display:block;font-size:16.5px;letter-spacing:-.02em;line-height:1.3}
+.week-info span{font-size:12.5px;color:var(--muted)}
+.week-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.week-tab{border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:7px 13px;border-radius:999px;font-size:13px;font-weight:800}
+.week-tab.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.week-hint{margin:9px 0 0;font-size:12px;color:var(--muted)}
+.date-list{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;margin-top:12px}
+@media(max-width:1020px){.date-list{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:560px){.date-list{grid-template-columns:repeat(2,minmax(0,1fr))}.week-info{min-width:0}.week-nav-btn{padding:9px 12px;font-size:13.5px}}
+.date-card{border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:11px;text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
 .date-card.active{border-color:var(--accent);background:var(--accent-soft);outline:2px solid var(--accent);outline-offset:-2px}
 .date-card .d-round{font-size:11px;font-weight:900;letter-spacing:.06em;color:var(--warm)}
 .date-card.active .d-round{color:var(--accent)}
-.date-card .d-date{font-weight:900;font-size:15px;line-height:1.3}
-.date-card .d-meta{font-size:12.5px;color:var(--muted)}
+.date-card .d-dow{font-size:12px;font-weight:900;color:var(--muted)}
+.date-card .d-date{font-weight:900;font-size:16.5px;line-height:1.3;letter-spacing:-.02em}
+.date-card .d-meta{font-size:12px;color:var(--muted);line-height:1.5}
 .date-card .d-prog{font-size:12px;font-weight:700;color:var(--accent);margin-top:4px}
 .pager{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
 .pager-info{font-size:13.5px;color:var(--muted);font-weight:700;text-align:center;flex:1}
@@ -440,16 +453,23 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:10px 0 0}
           <div class="stat"><b id="statDone">0</b><span>복습 완료</span></div>
           <div class="stat"><b id="statBatches">1일치</b><span id="statBatchLabel">2026.11.01 시작</span></div>
         </div>
-        <div class="next"><b>날짜별로 한 페이지씩 봐요</b>스크롤이 길어지지 않게, 하루 분량(10개)씩 날짜 페이지로 나눴어요. 아래에서 날짜를 고르면 그날 것만 보입니다.</div>
+        <div class="next"><b>일주일씩 옆으로 넘겨 봐요</b>날짜가 길게 쌓이지 않게, 아래 날짜 목록은 한 주(7일)씩만 보여요. ‹ 이전 주 · 다음 주 › 버튼이나 좌우로 밀기(스와이프)로 주를 넘기고, 날짜를 누르면 그날 분량(10개)만 보입니다.</div>
       </div>
     </div>
 
-    <section class="date-archive" aria-label="날짜별 회차 목록">
+    <section class="date-archive" id="dateArchive" aria-label="날짜별 회차 목록">
       <div class="date-archive-head">
-        <h2>📅 날짜별 회차</h2>
-        <p>날짜를 누르면 그날 페이지로 이동해요 · 최신 날짜가 먼저 보여요</p>
+        <h2>📅 날짜별 회차 · 주 단위</h2>
+        <p>한 주씩 옆으로 넘겨 봐요 · 날짜를 누르면 그날 페이지로 이동해요</p>
       </div>
+      <div class="week-bar">
+        <button class="week-nav-btn" id="prevWeekBtn" type="button" aria-label="이전 주 보기">‹ 이전 주</button>
+        <div class="week-info" id="weekInfo" aria-live="polite"></div>
+        <button class="week-nav-btn" id="nextWeekBtn" type="button" aria-label="다음 주 보기">다음 주 ›</button>
+      </div>
+      <div class="week-tabs" id="weekTabs" role="group" aria-label="주차 바로가기" style="margin-top:10px"></div>
       <div class="date-list" id="dateList"></div>
+      <p class="week-hint">💡 날짜 칸을 좌우로 밀면(스와이프) 이전 주·다음 주로 넘어가요.</p>
       <div class="pager">
         <button class="btn" id="prevDateBtn" type="button">← 이전 날짜</button>
         <div class="pager-info" id="pagerInfo"></div>
@@ -2557,7 +2577,7 @@ function setLang(m){
   langMode=m;
   if(m==="ko"){ SKITS=KO_SKITS; BATCHES=KO_BATCHES; curBatch=koCurBatch||1; }
   else { SKITS=EN_SKITS; BATCHES=EN_BATCHES; curBatch=enCurBatch||EN_BATCHES[EN_BATCHES.length-1].id; }
-  curCat="전체"; quizCurrent=null; reviewIdx=0; reviewReveal=false;
+  curCat="전체"; curWeek=null; quizCurrent=null; reviewIdx=0; reviewReveal=false;
   document.getElementById("langEnBtn").classList.toggle("active", m==="en");
   document.getElementById("langKoBtn").classList.toggle("active", m==="ko");
   document.getElementById("tabPhonics").style.display=(m==="ko")?"none":"";
@@ -2610,20 +2630,59 @@ function lineHTML(l, blurKo){
 }
 function isSearching(){ return (document.getElementById("search").value||"").trim().length>0; }
 
+/* ---- 주(week) 단위 묶음: 첫 날짜부터 7일씩 끊어 한 화면에는 한 주만 보여줍니다 ---- */
+var curWeek=null; /* null이면 현재 보고 있는 날짜가 속한 주를 표시 */
+var lastBatchSeen=null; /* curBatch가 밖에서 바뀌면(복습·NGSL 이동 등) 주 표시도 따라갑니다 */
+function weeksOf(){
+  var sorted=BATCHES.slice().sort(function(a,b){return a.id-b.id});
+  var weeks=[]; for(var i=0;i<sorted.length;i+=7) weeks.push(sorted.slice(i,i+7));
+  return weeks;
+}
+function weekIndexOfBatch(id){
+  var weeks=weeksOf();
+  for(var i=0;i<weeks.length;i++){ for(var j=0;j<weeks[i].length;j++){ if(weeks[i][j].id===id) return i; } }
+  return weeks.length-1;
+}
+function dowOf(b){ var m=/\((.)\)/.exec(b.display||""); return m?m[1]:""; }
+function goWeek(i){
+  var weeks=weeksOf();
+  if(i<0||i>=weeks.length) return;
+  curWeek=i; renderDateNav();
+}
+function goPrevWeek(){ if(curWeek===null) curWeek=weekIndexOfBatch(curBatch); goWeek(curWeek-1); }
+function goNextWeek(){ if(curWeek===null) curWeek=weekIndexOfBatch(curBatch); goWeek(curWeek+1); }
+
 function renderDateNav(){
-  var sorted=BATCHES.slice().sort(function(a,b){return b.id-a.id});
-  var html=sorted.map(function(b){
+  var weeks=weeksOf();
+  if(curBatch!==lastBatchSeen){ lastBatchSeen=curBatch; curWeek=weekIndexOfBatch(curBatch); }
+  if(curWeek===null||curWeek<0||curWeek>=weeks.length) curWeek=weekIndexOfBatch(curBatch);
+  var week=weeks[curWeek]||[];
+  var latestId=BATCHES[BATCHES.length-1].id;
+  var html=week.map(function(b){
     var list=skitsOfBatch(b.id);
     var done=list.filter(function(s){return doneSet[s.id]}).length;
     return '<button type="button" class="date-card'+(b.id===curBatch && !isSearching()?" active":"")+'" data-batch="'+b.id+'">'
-      +'<span class="d-round">'+b.id+'회차'+(b.id===BATCHES[BATCHES.length-1].id?" · 최신":"")+'</span>'
-      +'<span class="d-date">'+b.display+'</span>'
+      +'<span class="d-round">'+b.id+'회차'+(b.id===latestId?" · 최신":"")+'</span>'
+      +'<span class="d-dow">'+dowOf(b)+'요일</span>'
+      +'<span class="d-date">'+b.short+'</span>'
       +'<span class="d-meta">상황극 '+list.length+'개 · 대사 '+list.reduce(function(a,s){return a+s.lines.length},0)+'개</span>'
       +'<span class="d-prog">'+(done?("✓ "+done+" / "+list.length+" 복습 완료"):"아직 복습 전")+'</span>'
       +'</button>';
   }).join("");
   document.getElementById("dateList").innerHTML=html;
   document.querySelectorAll("[data-batch]").forEach(function(el){ el.onclick=function(){ switchBatch(+el.getAttribute("data-batch"), true); }});
+  /* 주 정보 · 주차 바로가기 · 이전/다음 주 버튼 상태 */
+  var first=week[0], last=week[week.length-1];
+  var wi=document.getElementById("weekInfo");
+  if(wi && first) wi.innerHTML='<b>'+(curWeek+1)+'주차 · '+first.short+' ~ '+last.short+'</b><span>전체 '+weeks.length+'주 · '+BATCHES.length+'일치 중 '+(curWeek+1)+'번째 주예요</span>';
+  var wt=document.getElementById("weekTabs");
+  if(wt) wt.innerHTML=weeks.map(function(w,i){
+    return '<button type="button" class="week-tab'+(i===curWeek?" active":"")+'" data-week="'+i+'">'+(i+1)+'주차 · '+w[0].short+'~'+w[w.length-1].short+'</button>';
+  }).join("");
+  document.querySelectorAll("[data-week]").forEach(function(el){ el.onclick=function(){ goWeek(+el.getAttribute("data-week")); }});
+  var pw=document.getElementById("prevWeekBtn"), nw=document.getElementById("nextWeekBtn");
+  if(pw) pw.disabled=curWeek<=0;
+  if(nw) nw.disabled=curWeek>=weeks.length-1;
   var idx=BATCHES.findIndex(function(b){return b.id===curBatch});
   var cur=batchById(curBatch);
   var info=cur.id+"회차 · "+cur.display+" · "+(idx+1)+" / "+BATCHES.length+" 페이지";
@@ -2650,7 +2709,7 @@ function renderBatchHead(visible, searching){
   head.innerHTML='<div class="batch-head"><h2>'+cur.id+'회차 · '+cur.title+'</h2><p>'+cur.display+' · 상황극 '+list.length+'개 · 각 상황 3번 주고받기 · 복습 완료 '+done+'/'+list.length+'</p></div>';
 }
 function switchBatch(id, scroll){
-  curBatch=id; curCat="전체";
+  curBatch=id; curWeek=weekIndexOfBatch(id); curCat="전체";
   var s=document.getElementById("search"); if(s) s.value="";
   renderChips(); renderDateNav(); renderGrid();
   if(scroll){
@@ -2664,6 +2723,20 @@ document.getElementById("prevDateBtn").onclick=goPrevDate;
 document.getElementById("nextDateBtn").onclick=goNextDate;
 document.getElementById("prevDateBtn2").onclick=goPrevDate;
 document.getElementById("nextDateBtn2").onclick=goNextDate;
+document.getElementById("prevWeekBtn").onclick=goPrevWeek;
+document.getElementById("nextWeekBtn").onclick=goNextWeek;
+/* 날짜 영역을 좌우로 밀면(스와이프) 이전 주·다음 주로 넘어갑니다 */
+(function(){
+  var box=document.getElementById("dateArchive"); if(!box) return;
+  var sx=null, sy=null;
+  box.addEventListener("touchstart",function(e){ if(e.touches.length===1){ sx=e.touches[0].clientX; sy=e.touches[0].clientY; } },{passive:true});
+  box.addEventListener("touchend",function(e){
+    if(sx===null) return;
+    var dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+    sx=null;
+    if(Math.abs(dx)>56 && Math.abs(dx)>Math.abs(dy)*1.6){ if(dx<0) goNextWeek(); else goPrevWeek(); }
+  },{passive:true});
+})();
 
 function renderGrid(){
   var q=(document.getElementById("search").value||"").trim().toLowerCase();
